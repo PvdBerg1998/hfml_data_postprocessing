@@ -38,34 +38,37 @@ def angle_data(sample, direction, var, type, angle):
 a = 100
 b = 700
 
-dataset = []
-names = []
-for angle in [-10, -5, 0, 5, 10, 20, 30, 40]:
-    print(f"Loading angle {angle}")
-    df = angle_data(
-        sample="Zr3_5584_nb_sc",
-        direction="down",
-        var="Rxx68",
-        type="fft",
-        angle=angle
-    )
-    assert(df is not None)
-    dataset.append(df)
-    names.append(f"{angle} deg")
+for direction in ["up", "down"]:
+    for var in ["Rxx68", "Rxy37", "Rxy48"]:
+        dataset = []
+        names = []
+        for angle in [-10, -5, 0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90]:
+            print(f"Loading angle {angle}")
+            df = angle_data(
+                sample="Zr3_5584_nb_sc",
+                direction=direction,
+                var=var,
+                type="fft",
+                angle=angle
+            )
+            assert(df is not None)
+            df = df[df.x.between(a, b)]
+            dataset.append(df)
+            names.append(f"{angle} deg")
 
-# Normalise to 0 deg
-zero_deg = dataset[2]
-assert(names[2] == "0 deg")
-normalisation = zero_deg[zero_deg.x.between(a, b)].y.max()
+        # Normalise to 0 deg
+        normalisation = dataset[2].y.max()
+        for df in dataset:
+            df.y = df.y / normalisation
 
-op.fft_stacked_plot(
-    dataset,
-    names,
-    normalisation,
-    xstart=a,
-    xend=b,
-    legendmargin=5,
-    filename="Zr3_5584_nb_sc_angles_Rxx68_down"
-)
+        op.fft_stacked_plot(
+            dataset,
+            names,
+            xstart=a,
+            xend=b,
+            offset=2,
+            xtick_interval=100,
+            filename=f"Zr3_5584_nb_sc_angles_{var}_{direction}"
+        )
 
 op.close_origin()

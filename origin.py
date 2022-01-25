@@ -24,19 +24,24 @@ import sys
 global op
 op = None
 
+# This will keep Origin open for debugging
+debug = False
+
 
 def fft_stacked_plot(
     # list of pandas dataframes
     dataset,
     # names corresponding to dataframes
     names,
-    # y normalisation
-    normalisation,
     # x limits
     xstart,
     xend,
-    # legend margin in x units
-    legendmargin=0,
+    xtick_interval,
+    # y limits
+    ystart=None,
+    yend=None,
+    # legend margin in percent of x range
+    legendmargin=1,
     # output directory
     directory=os.getcwd(),
     # output filename
@@ -48,7 +53,12 @@ def fft_stacked_plot(
     # width of plot lines in "origin units"
     linewidth=2
 ):
-    _start_origin()
+    if ystart is None:
+        ystart = -offset
+    if yend is None:
+        yend = len(dataset) * offset
+
+    _start_origin(show=debug)
 
     # Create graph container in line mode
     graph = op.new_graph(template="line")
@@ -58,11 +68,6 @@ def fft_stacked_plot(
     # Add angle data into worksheets and plot layers
     i = 0
     for df in dataset:
-        # Normalize
-        df.y = df.y / normalisation
-        # Shift for stacking
-        df.y = df.y + i * offset
-
         # Create worksheet
         wks = op.new_sheet("w", lname=names[i], hidden=True)
         wks.from_df(df)
@@ -76,15 +81,20 @@ def fft_stacked_plot(
     # Change plot formatting
     print("Postprocessing graph")
 
-    # Zoom
-    gl.set_xlim(xstart, xend)
-    gl.rescale(skip="x")
-
-    gl.axis("x").title = "Frequency"
-    gl.axis("y").title = "FFT Amplitude"
-
     # Group plots
     gl.group()
+
+    # Set group stacking
+    # See https://www.originlab.com/doc/en/LabTalk/ref/Layer-cmd
+    gl.lt_exec(f"layer -b s 2 {offset};")
+
+    # Zoom
+    gl.set_xlim(xstart, xend)
+    gl.set_ylim(ystart, yend)
+
+    # Axis labels
+    gl.axis("x").title = "Frequency (T)"
+    gl.axis("y").title = "FFT Amplitude (a.u.)"
 
     # Apply PRL theme
     # For some reason this is not implemented in the Python API so we use Labtalk
@@ -104,6 +114,17 @@ def fft_stacked_plot(
     width = linewidth * 500
     graph.lt_exec(f"set %C -w {width};")
 
+    # Set x ticks
+    gl.lt_exec(f"layer.x.inc = {xtick_interval};")
+    gl.lt_exec("layer.x.minorTicks = 1;")
+
+    # Set major y ticks on every plot line
+    gl.lt_exec(f"layer.y.inc = {offset};")
+    gl.lt_exec("layer.y.minorTicks = 0;")
+
+    # Enable grid
+    gl.lt_exec("layer.x.showGrids = 1;")
+
     # Hide y tick numbers
     graph.lt_exec("axis -ps Y L 0;")
 
@@ -111,7 +132,8 @@ def fft_stacked_plot(
     graph.lt_exec("legendupdate update:=reconstruct order:=descend;")
 
     # Align legend to top right
-    graph.lt_exec(f"legend.x = layer.x.to + {legendmargin} + legend.dx / 2;")
+    graph.lt_exec(
+        f"legend.x = layer.x.to + {legendmargin / 100 * (xend - xstart)} + legend.dx / 2;")
     graph.lt_exec(f"legend.y = layer.y.to - legend.dy / 2;")
 
     # Export graph
@@ -145,4 +167,6 @@ def _start_origin(show=False):
 def close_origin():
     global op
     if op is not None:
+        if debug:
+            input(">")
         op.exit()

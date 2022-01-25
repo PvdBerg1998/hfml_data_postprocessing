@@ -36,10 +36,12 @@ for region in ["low", "high"]:
             if region == "low":
                 a = 100
                 b = 700
+                xtick_interval = 100
             else:
                 a = 6000
                 b = 8000
-                
+                xtick_interval = 400
+
             dataset = []
             names = []
             for temp in ["1p3", "2p5", "3p2", "4p2", "8p0", "12p0", "18p0", "25p0", "35p0", "50p0"]:
@@ -60,14 +62,15 @@ for region in ["low", "high"]:
 
             # Normalise to 1.3K
             normalisation = dataset[0].y.max()
+            for df in dataset:
+                df.y = df.y / normalisation
 
             op.fft_stacked_plot(
                 dataset,
                 names,
-                normalisation,
                 xstart=a,
                 xend=b,
-                legendmargin=5,
+                xtick_interval=xtick_interval,
                 palette="Fire",
                 filename=f"Zr3_5584_nb_sc_temp_{var}_{direction}_{region}freq"
             )
