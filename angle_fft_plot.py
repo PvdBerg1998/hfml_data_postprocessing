@@ -56,8 +56,10 @@ for direction in ["up", "down"]:
             dataset.append(df)
             names.append(f"{angle} deg")
 
-        # Normalise to 0 deg
-        normalisation = dataset[2].y.max()
+        # Normalise
+        normalisation = 0
+        for df in dataset:
+            normalisation = max(normalisation, df.y.max())
         for df in dataset:
             df.y = df.y / normalisation
 
@@ -66,7 +68,6 @@ for direction in ["up", "down"]:
             names,
             xstart=a,
             xend=b,
-            offset=2,
             xtick_interval=100,
             filename=f"Zr3_5584_nb_sc_angles_{var}_{direction}"
         )

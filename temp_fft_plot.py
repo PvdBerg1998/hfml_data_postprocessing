@@ -61,7 +61,9 @@ for region in ["low", "high"]:
                 names.append(f"{temp_label} K")
 
             # Normalise to 1.3K
-            normalisation = dataset[0].y.max()
+            normalisation = 0
+            for df in dataset:
+                normalisation = max(normalisation, df.y.max())
             for df in dataset:
                 df.y = df.y / normalisation
 
