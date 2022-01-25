@@ -48,7 +48,7 @@ def weight(x, f):
     Weighing factor used to assign a higher priority to data near the peak
     f increases the weight in the middle
     """
-    return -(f*x)**4-1
+    return (f*x)**4 + 1
 
 
 def import_csv(path):
