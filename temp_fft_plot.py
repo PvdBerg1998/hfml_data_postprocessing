@@ -29,71 +29,47 @@ def temp_data(sample, direction, var, type, temp):
     return None
 
 
-for direction in ["up", "down"]:
-    for var in ["Rxx68", "Rxy37", "Rxy48"]:
-        dataset = []
-        names = []
-        for temp in ["1p3", "2p5", "3p2", "4p2", "8p0", "12p0", "18p0", "25p0", "35p0", "50p0"]:
-            print(f"Loading temp {temp}")
-            df = temp_data(
-                sample="Zr3_5584_nb_sc",
-                direction=direction,
-                var=var,
-                type="fft",
-                temp=temp
+for region in ["low", "high"]:
+    for direction in ["up", "down"]:
+        for var in ["Rxx68", "Rxy37", "Rxy48"]:
+            # region of interest
+            if region == "low":
+                a = 100
+                b = 700
+            else:
+                a = 6000
+                b = 8000
+                
+            dataset = []
+            names = []
+            for temp in ["1p3", "2p5", "3p2", "4p2", "8p0", "12p0", "18p0", "25p0", "35p0", "50p0"]:
+                print(f"Loading temp {temp}")
+                df = temp_data(
+                    sample="Zr3_5584_nb_sc",
+                    direction=direction,
+                    var=var,
+                    type="fft",
+                    temp=temp
+                )
+                assert(df is not None)
+                df = df[df.x.between(a, b)]
+                dataset.append(df)
+
+                temp_label = temp.replace("p", ".")
+                names.append(f"{temp_label} K")
+
+            # Normalise to 1.3K
+            normalisation = dataset[0].y.max()
+
+            op.fft_stacked_plot(
+                dataset,
+                names,
+                normalisation,
+                xstart=a,
+                xend=b,
+                legendmargin=5,
+                palette="Fire",
+                filename=f"Zr3_5584_nb_sc_temp_{var}_{direction}_{region}freq"
             )
-            assert(df is not None)
-            dataset.append(df)
-
-            temp_label = temp.replace("p", ".")
-            names.append(f"{temp_label} K")
-
-        #
-        # low freq
-        #
-
-        # region of interest
-        a = 100
-        b = 700
-
-        # Normalise to 1.3K
-        cold = dataset[0]
-        assert(names[0] == "1.3 K")
-        normalisation = cold[cold.x.between(a, b)].y.max()
-
-        op.fft_stacked_plot(
-            dataset,
-            names,
-            normalisation,
-            xstart=a,
-            xend=b,
-            legendmargin=5,
-            palette="Fire",
-            filename=f"Zr3_5584_nb_sc_temp_{var}_{direction}_lowfreq"
-        )
-
-        #
-        # high freq
-        #
-
-        # region of interest
-        a = 6000
-        b = 8000
-
-        # Normalise to 1.3K
-        cold = dataset[0]
-        assert(names[0] == "1.3 K")
-        normalisation = cold[cold.x.between(a, b)].y.max()
-
-        op.fft_stacked_plot(
-            dataset,
-            names,
-            normalisation,
-            xstart=a,
-            xend=b,
-            legendmargin=5,
-            palette="Fire",
-            filename=f"Zr3_5584_nb_sc_temp_{var}_{direction}_highfreq"
-        )
 
 op.close_origin()
