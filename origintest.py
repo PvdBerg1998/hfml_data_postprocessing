@@ -26,27 +26,48 @@ def angle_data(sample, direction, var, type, angle):
     return None
 
 
+debug = False
+
 if __name__ == "__main__":
     # Start origin
+    print("Starting Origin")
     if op.oext:
-        op.set_show(True)
+        op.set_show(debug)
 
     plotparams = {
         # x limits
         "xstart": 100,
         "xend": 700,
         # stacking offset
-        "offset": 0.75,
-        "palette": "System Color List"
+        "offset": 1,
+        # coloring of different lines
+        "palette": "System Color List",
+        # width of plot lines in "origin units"
+        "linewidth": 2,
+        # legend margin in x units
+        "legendmargin": 20
     }
 
     graph = op.new_graph(template="line")
     # First graph layer
     gl = graph[0]
 
+    # Normalize to zero angle max peak
+    df = angle_data(**{
+        "sample": "Zr3_5584_nb_sc",
+        "direction": "up",
+        "var": "Rxx68",
+        "type": "fft",
+        "angle": 0
+    })
+    df = df[df.x.between(plotparams["xstart"], plotparams["xend"])]
+    normalisation = df.y.max()
+
     # Add angle data into worksheets and plot layers
     i = 0
-    for angle in [-10, -5, 0, 5, 10]:
+    # , 50, 60, 70, 80, 90, 100, 110]:
+    for angle in [-10, -5, 0, 5, 10, 20, 30, 40]:
+        print(f"Loading angle {angle}")
         params = {
             "sample": "Zr3_5584_nb_sc",
             "direction": "up",
@@ -60,7 +81,7 @@ if __name__ == "__main__":
         df = df[df.x.between(plotparams["xstart"], plotparams["xend"])]
 
         # Normalize
-        df.y = df.y / df.y.max()
+        df.y = df.y / normalisation
         # Shift for stacking
         df.y = df.y + i * plotparams["offset"]
 
@@ -70,9 +91,12 @@ if __name__ == "__main__":
         angle = params["angle"]
         wks.set_labels(["Frequency", f"{angle} deg"])
 
+        print(f"Plotting angle {angle}")
         plot = gl.add_plot(wks, colx=0, coly=1)
 
         i += 1
+
+    print("Postprocessing graph")
 
     # Zoom
     gl.set_xlim(plotparams["xstart"], plotparams["xend"])
@@ -89,14 +113,38 @@ if __name__ == "__main__":
     graph.lt_exec(
         "themeApply2g theme := \"Physical Review Letters\" option := project;")
 
-    # # Patch colors
-    i = 0
+    # Set colors _after_ applying theme
     for plot in gl.plot_list():
         plot.colormap = plotparams["palette"]
+        # Set color increment to stretch to use the entire palette
         plot.colorinc = 2  # Magic number : index into option menu
-        i += 1
 
-    # Wait for inspection
-    input(">")
+    # Set line width
+    # Multiply by 500 because its defined like this
+    width = plotparams["linewidth"] * 500
+    graph.lt_exec(f"set %C -w {width};")
+
+    # Hide y tick numbers
+    graph.lt_exec("axis -ps Y L 0;")
+
+    # Align legend to top right
+    offset = plotparams["legendmargin"]
+    max_x = plotparams["xend"]
+    max_y = i * plotparams["offset"]
+    graph.lt_exec(f"legend.x = {max_x + offset} + legend.dx / 2;")
+    graph.lt_exec(f"legend.y = {max_y} - legend.dy / 2;")
+
+    # Save
+    print("Saving")
+    # Can't use the Python savefig because we need to use a margin flag,
+    # otherwise the legend gets cut off.
+    out = os.path.join(os.getcwd(), "out.pdf")
+    op.lt_exec(f"expGraph type:=pdf path:={out} tr.Margin:=2;")
+    op.save(os.path.join(os.getcwd(), "out.opju"))
+
+    if debug:
+        input(">")
+
+    print("Exiting Origin")
     if op.oext:
         op.exit()
