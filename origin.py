@@ -20,6 +20,11 @@ import os
 import sys
 
 
+# Initially, origin is not started/imported
+global op
+op = None
+
+
 def fft_stacked_plot(
     # list of pandas dataframes
     dataset,
@@ -43,7 +48,6 @@ def fft_stacked_plot(
     # width of plot lines in "origin units"
     linewidth=2
 ):
-    print("Starting Origin")
     _start_origin()
 
     # Create graph container in line mode
@@ -118,23 +122,27 @@ def fft_stacked_plot(
         f"expGraph type:=pdf path:=\"{directory}\" filename:=\"{filename}.pdf\" tr.Margin:=1 overwrite:=1;")
     op.save(os.path.join(directory, f"{filename}.opju"))
 
-    print("Exiting Origin")
-    _close_origin()
-
 
 def _start_origin(show=False):
     # Do a late import as this takes ages
     global op
-    import originpro
-    op = originpro
+    if op is None:
+        print("Starting Origin")
+        import originpro
+        op = originpro
 
-    def origin_shutdown_exception_hook(exctype, value, traceback):
-        op.exit()
-        sys.__excepthook__(exctype, value, traceback)
-    sys.excepthook = origin_shutdown_exception_hook
-    op.set_show(show)
+        def origin_shutdown_exception_hook(exctype, value, traceback):
+            op.exit()
+            sys.__excepthook__(exctype, value, traceback)
+        sys.excepthook = origin_shutdown_exception_hook
+        op.set_show(show)
+    else:
+        # Reuse import
+        # Create a new project
+        op.new()
 
 
-def _close_origin():
+def close_origin():
     global op
-    op.exit()
+    if op is not None:
+        op.exit()
