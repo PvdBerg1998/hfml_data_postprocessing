@@ -22,8 +22,10 @@ import pandas as pd
 import origin as op
 
 
-def angle_data(sample, direction, var, type, angle):
-    directory = f"C:/Users/pim/Sync/University/MEP/Data/1_ZrSiSe/{sample}/output/Angle_Dependence_4p2K_pos_{direction}/{var}/{type}/"
+def angle_data(sample, commutation, direction, var, type, angle):
+    directory = f"C:/Users/pim/Sync/University/MEP/Data/1_ZrSiSe/{sample}/output/Angle_Dependence_{commutation}_{direction}/{var}/{type}/"
+    if not os.path.exists(directory):
+        return None
     if angle < 0:
         prefix = "m"
     else:
@@ -38,48 +40,50 @@ def angle_data(sample, direction, var, type, angle):
 a = 100
 b = 700
 
-for sample in ["Zr3_5584_nb_sc"]:
-    for var in ["Rxx68", "Rxy37", "Rxy48"]:
-        for direction in ["up", "down"]:
-            print(f"Processing {sample}: {var} {direction}")
+for sample in ["Zr3_5584_nb_sc", "Zr3_1458_nb_hf"]:
+    for var in ["Rxx68", "Rxy37", "Rxy48", "Rxx_1_7", "Rxx_2_7", "Rxx_17_18", "Rxy_2_17"]:
+        for commutation in ["up", "down"]:
+            for direction in ["up", "down"]:
+                dataset = []
+                names = []
+                for angle in [-10, -5, 0, 5, 10, 20, 25, 30, 40, 45, 50, 60, 70, 75, 80, 90]:
+                    df = angle_data(
+                        sample=sample,
+                        commutation=commutation,
+                        direction=direction,
+                        var=var,
+                        type="fft",
+                        angle=angle
+                    )
+                    # Ignore missing configurations
+                    if df is None:
+                        continue
+                    print(f"Found angle {angle}")
+                    df = df[df.x.between(a, b)]
+                    dataset.append(df)
+                    names.append(f"{angle} deg")
 
-            dataset = []
-            names = []
-            for angle in [-10, -5, 0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90]:
-                df = angle_data(
-                    sample=sample,
-                    direction=direction,
-                    var=var,
-                    type="fft",
-                    angle=angle
-                )
                 # Ignore missing configurations
-                if df is None:
+                if len(dataset) == 0:
                     continue
-                print(f"Found angle {angle}")
-                df = df[df.x.between(a, b)]
-                dataset.append(df)
-                names.append(f"{angle} deg")
 
-            # Ignore missing configurations
-            if len(dataset) == 0:
-                continue
+                print(f"Processing {sample}: {var} {commutation} {direction}")
 
-            # Normalise
-            normalisation = 0
-            for df in dataset:
-                normalisation = max(normalisation, df.y.max())
-            for df in dataset:
-                df.y = df.y / normalisation
+                # Normalise
+                normalisation = 0
+                for df in dataset:
+                    normalisation = max(normalisation, df.y.max())
+                for df in dataset:
+                    df.y = df.y / normalisation
 
-            op.fft_stacked_plot(
-                dataset,
-                names,
-                xstart=a,
-                xend=b,
-                xtick_interval=100,
-                directory=os.path.join(
-                    "C:/Users/pim/Sync/University/MEP/Data/1_ZrSiSe", f"plots/{sample}/angle/{var}/{direction}/"),
-            )
+                op.fft_stacked_plot(
+                    dataset,
+                    names,
+                    xstart=a,
+                    xend=b,
+                    xtick_interval=100,
+                    directory=os.path.join(
+                        "C:/Users/pim/Sync/University/MEP/Data/1_ZrSiSe", f"plots/{sample}/angle/{var}/{commutation}/{direction}/"),
+                )
 
 op.close_origin()
