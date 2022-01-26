@@ -131,6 +131,8 @@ def fft_overlapped_plot(
     os.makedirs(directory, exist_ok=True)
     op.lt_exec(
         f"expGraph type:=pdf path:=\"{directory}\" filename:=\"{filename}.pdf\" tr.Margin:=1 overwrite:=1;")
+    op.lt_exec(
+        f"expGraph type:=png path:=\"{directory}\" filename:=\"{filename}.png\" tr.Margin:=1 overwrite:=1;")
     originsave = os.path.join(directory, f"{filename}.opju")
     op.lt_exec(f"save {originsave};")
 
@@ -250,6 +252,8 @@ def fft_stacked_plot(
     os.makedirs(directory, exist_ok=True)
     op.lt_exec(
         f"expGraph type:=pdf path:=\"{directory}\" filename:=\"{filename}.pdf\" tr.Margin:=1 overwrite:=1;")
+    op.lt_exec(
+        f"expGraph type:=png path:=\"{directory}\" filename:=\"{filename}.png\" tr.Margin:=1 overwrite:=1;")
     originsave = os.path.join(directory, f"{filename}.opju")
     op.lt_exec(f"save {originsave};")
 
