@@ -31,7 +31,7 @@ def temp_data(sample, commutation, direction, var, type, temp):
     return None
 
 
-for sample in ["Zr3_5584_nb_sc", "Zr3_1458_nb_hf"]:
+for sample in ["Zr3_1458_nb_hf"]: # "Zr3_5584_nb_sc", 
     for var in ["Rxx68", "Rxy37", "Rxy48", "Rxx_1_7", "Rxx_2_7", "Rxx_17_18", "Rxy_2_17"]:
         for commutation in ["pos", "neg"]:
             for direction in ["up", "down"]:
@@ -87,6 +87,7 @@ for sample in ["Zr3_5584_nb_sc", "Zr3_1458_nb_hf"]:
                         xstart=a,
                         xend=b,
                         xtick_interval=xtick_interval,
+                        offset=1.1,
                         palette="Fire",
                         directory=os.path.join(
                             "C:/Users/pim/Sync/University/MEP/Data/1_ZrSiSe", f"plots/{sample}/temperature/{var}/{commutation}/{direction}/{region}freq/"),
