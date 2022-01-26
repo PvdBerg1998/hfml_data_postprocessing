@@ -42,7 +42,7 @@ b = 700
 
 for sample in ["Zr3_5584_nb_sc", "Zr3_1458_nb_hf"]:
     for var in ["Rxx68", "Rxy37", "Rxy48", "Rxx_1_7", "Rxx_2_7", "Rxx_17_18", "Rxy_2_17"]:
-        for commutation in ["up", "down"]:
+        for commutation in ["pos", "neg"]:
             for direction in ["up", "down"]:
                 dataset = []
                 names = []
