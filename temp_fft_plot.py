@@ -29,52 +29,72 @@ def temp_data(sample, direction, var, type, temp):
     return None
 
 
-for region in ["low", "high"]:
-    for direction in ["up", "down"]:
-        for var in ["Rxx68", "Rxy37", "Rxy48"]:
-            # region of interest
-            if region == "low":
-                a = 100
-                b = 700
-                xtick_interval = 100
-            else:
-                a = 6000
-                b = 8000
-                xtick_interval = 400
+for sample in ["Zr3_5584_nb_sc"]:
+    for var in ["Rxx68", "Rxy37", "Rxy48"]:
+        for direction in ["up", "down"]:
+            for region in ["low", "high"]:
+                print(f"Processing {sample}: {var} {direction} {region}freq")
 
-            dataset = []
-            names = []
-            for temp in ["1p3", "2p5", "3p2", "4p2", "8p0", "12p0", "18p0", "25p0", "35p0", "50p0"]:
-                print(f"Loading temp {temp}")
-                df = temp_data(
-                    sample="Zr3_5584_nb_sc",
-                    direction=direction,
-                    var=var,
-                    type="fft",
-                    temp=temp
+                # region of interest
+                if region == "low":
+                    a = 100
+                    b = 700
+                    xtick_interval = 100
+                else:
+                    a = 6000
+                    b = 8000
+                    xtick_interval = 400
+
+                dataset = []
+                names = []
+                for temp in ["1p3", "2p5", "3p2", "4p2", "8p0", "12p0", "18p0", "25p0", "35p0", "50p0"]:
+                    df = temp_data(
+                        sample=sample,
+                        direction=direction,
+                        var=var,
+                        type="fft",
+                        temp=temp
+                    )
+                    # Ignore missing temperatures
+                    if df is None:
+                        continue
+                    print(f"Found temp {temp}")
+                    df = df[df.x.between(a, b)]
+                    dataset.append(df)
+
+                    temp_label = temp.replace("p", ".")
+                    names.append(f"{temp_label} K")
+
+                # Normalise to 1.3K
+                normalisation = 0
+                for df in dataset:
+                    normalisation = max(normalisation, df.y.max())
+                for df in dataset:
+                    df.y = df.y / normalisation
+
+                op.fft_stacked_plot(
+                    dataset,
+                    names,
+                    xstart=a,
+                    xend=b,
+                    xtick_interval=xtick_interval,
+                    palette="Fire",
+                    directory=os.path.join(
+                        "C:/Users/pim/Sync/University/MEP/Data/1_ZrSiSe", f"plots/{sample}/temperature/{var}/{direction}/{region}freq/"),
                 )
-                assert(df is not None)
-                df = df[df.x.between(a, b)]
-                dataset.append(df)
 
-                temp_label = temp.replace("p", ".")
-                names.append(f"{temp_label} K")
-
-            # Normalise to 1.3K
-            normalisation = 0
-            for df in dataset:
-                normalisation = max(normalisation, df.y.max())
-            for df in dataset:
-                df.y = df.y / normalisation
-
-            op.fft_stacked_plot(
-                dataset,
-                names,
-                xstart=a,
-                xend=b,
-                xtick_interval=xtick_interval,
-                palette="Fire",
-                filename=f"Zr3_5584_nb_sc_temp_{var}_{direction}_{region}freq"
-            )
+                op.fft_overlapped_plot(
+                    dataset,
+                    names,
+                    xstart=a,
+                    xend=b,
+                    xtick_interval=xtick_interval,
+                    ystart=0,
+                    yend=1.1,
+                    ytick_interval=0.2,
+                    palette="Fire",
+                    directory=os.path.join(
+                        "C:/Users/pim/Sync/University/MEP/Data/1_ZrSiSe", f"plots/{sample}/temperature/{var}/{direction}/{region}freq/"),
+                )
 
 op.close_origin()

@@ -38,38 +38,43 @@ def angle_data(sample, direction, var, type, angle):
 a = 100
 b = 700
 
-for direction in ["up", "down"]:
+for sample in ["Zr3_5584_nb_sc"]:
     for var in ["Rxx68", "Rxy37", "Rxy48"]:
-        dataset = []
-        names = []
-        for angle in [-10, -5, 0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90]:
-            print(f"Loading angle {angle}")
-            df = angle_data(
-                sample="Zr3_5584_nb_sc",
-                direction=direction,
-                var=var,
-                type="fft",
-                angle=angle
+        for direction in ["up", "down"]:
+            print(f"Processing {sample}: {var} {direction}")
+
+            dataset = []
+            names = []
+            for angle in [-10, -5, 0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90]:
+                df = angle_data(
+                    sample=sample,
+                    direction=direction,
+                    var=var,
+                    type="fft",
+                    angle=angle
+                )
+                # All angles should exist
+                assert(df is not None)
+                print(f"Found angle {angle}")
+                df = df[df.x.between(a, b)]
+                dataset.append(df)
+                names.append(f"{angle} deg")
+
+            # Normalise
+            normalisation = 0
+            for df in dataset:
+                normalisation = max(normalisation, df.y.max())
+            for df in dataset:
+                df.y = df.y / normalisation
+
+            op.fft_stacked_plot(
+                dataset,
+                names,
+                xstart=a,
+                xend=b,
+                xtick_interval=100,
+                directory=os.path.join(
+                    "C:/Users/pim/Sync/University/MEP/Data/1_ZrSiSe", f"plots/{sample}/angle/{var}/{direction}/"),
             )
-            assert(df is not None)
-            df = df[df.x.between(a, b)]
-            dataset.append(df)
-            names.append(f"{angle} deg")
-
-        # Normalise
-        normalisation = 0
-        for df in dataset:
-            normalisation = max(normalisation, df.y.max())
-        for df in dataset:
-            df.y = df.y / normalisation
-
-        op.fft_stacked_plot(
-            dataset,
-            names,
-            xstart=a,
-            xend=b,
-            xtick_interval=100,
-            filename=f"Zr3_5584_nb_sc_angles_{var}_{direction}"
-        )
 
 op.close_origin()
