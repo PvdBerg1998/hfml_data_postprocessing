@@ -53,12 +53,17 @@ for sample in ["Zr3_5584_nb_sc"]:
                     type="fft",
                     angle=angle
                 )
-                # All angles should exist
-                assert(df is not None)
+                # Ignore missing configurations
+                if df is None:
+                    continue
                 print(f"Found angle {angle}")
                 df = df[df.x.between(a, b)]
                 dataset.append(df)
                 names.append(f"{angle} deg")
+
+            # Ignore missing configurations
+            if len(dataset) == 0:
+                continue
 
             # Normalise
             normalisation = 0

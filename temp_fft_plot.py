@@ -55,7 +55,7 @@ for sample in ["Zr3_5584_nb_sc"]:
                         type="fft",
                         temp=temp
                     )
-                    # Ignore missing temperatures
+                    # Ignore missing configurations
                     if df is None:
                         continue
                     print(f"Found temp {temp}")
@@ -64,6 +64,10 @@ for sample in ["Zr3_5584_nb_sc"]:
 
                     temp_label = temp.replace("p", ".")
                     names.append(f"{temp_label} K")
+
+                # Ignore missing configurations
+                if len(dataset) == 0:
+                    continue
 
                 # Normalise to 1.3K
                 normalisation = 0
