@@ -49,6 +49,8 @@ def fft_overlapped_plot(
     filename="fft_overlapped",
     # coloring of different lines
     palette="System Color List",
+    # use palette stretching
+    palette_stretch=True,
     # width of plot lines in "origin units"
     linewidth=2
 ):
@@ -94,10 +96,13 @@ def fft_overlapped_plot(
     # Apply theme tweaks _after_ PRL theme
 
     # Set colors
-    for plot in gl.plot_list():
-        plot.colormap = palette
-        # Set color increment to stretch to use the entire palette
-        plot.colorinc = 2  # Magic number : index into option menu
+    if palette is not None:
+        for plot in gl.plot_list():
+            plot.colormap = palette
+            if palette_stretch:
+                plot.colorinc = 2  # Magic number : index into option menu
+            else:
+                plot.colorinc = 1
 
     # Set line width
     # Multiply by 500 because its defined like this
@@ -159,6 +164,8 @@ def fft_stacked_plot(
     offset=1,
     # coloring of different lines
     palette="System Color List",
+    # use palette stretching
+    palette_stretch=True,
     # width of plot lines in "origin units"
     linewidth=2
 ):
@@ -213,10 +220,13 @@ def fft_stacked_plot(
     # Apply theme tweaks _after_ PRL theme
 
     # Set colors
-    for plot in gl.plot_list():
-        plot.colormap = palette
-        # Set color increment to stretch to use the entire palette
-        plot.colorinc = 2  # Magic number : index into option menu
+    if palette is not None:
+        for plot in gl.plot_list():
+            plot.colormap = palette
+            if palette_stretch:
+                plot.colorinc = 2  # Magic number : index into option menu
+            else:
+                plot.colorinc = 1
 
     # Set line width
     # Multiply by 500 because its defined like this
@@ -244,6 +254,95 @@ def fft_stacked_plot(
     graph.lt_exec(
         f"legend.x = layer.x.to + {legendmargin / 100 * (xend - xstart)} + legend.dx / 2;")
     graph.lt_exec(f"legend.y = layer.y.to - legend.dy / 2;")
+
+    # Export graph
+    print("Saving")
+    # Can't use the Python savefig because we need to use a margin flag,
+    # otherwise the legend gets cut off.
+    os.makedirs(directory, exist_ok=True)
+    op.lt_exec(
+        f"expGraph type:=pdf path:=\"{directory}\" filename:=\"{filename}.pdf\" tr.Margin:=1 overwrite:=1;")
+    op.lt_exec(
+        f"expGraph type:=png path:=\"{directory}\" filename:=\"{filename}.png\" tr.Margin:=1 overwrite:=1;")
+    originsave = os.path.join(directory, f"{filename}.opju")
+    op.lt_exec(f"save {originsave};")
+
+
+def fft_plot(
+    # single dataframe
+    dataframe,
+    # names corresponding to dataframes
+    name,
+    # x limits
+    xstart,
+    xend,
+    xtick_interval,
+    # y limits
+    ystart,
+    yend,
+    ytick_interval,
+    # legend margin in percent of x range
+    legendmargin=1,
+    # output directory
+    directory=os.getcwd(),
+    # output filename
+    filename="fft",
+    # width of plot lines in "origin units"
+    linewidth=2
+):
+    _start_origin(show=debug)
+
+    # Create graph container in line mode
+    graph = op.new_graph(template="line")
+    # First graph layer
+    gl = graph[0]
+
+    # Add angle data into worksheets and plot layers
+    # Create worksheet
+    wks = op.new_sheet("w", lname=name, hidden=True)
+    wks.from_df(dataframe)
+    wks.set_labels(["Frequency", name])
+
+    print(f"Plotting dataframe {name}")
+    plot = gl.add_plot(wks, colx=0, coly=1)
+
+    # Change plot formatting
+    print("Postprocessing graph")
+
+    # Zoom
+    gl.set_xlim(xstart, xend)
+    gl.set_ylim(ystart, yend)
+
+    # Axis labels
+    gl.axis("x").title = "Frequency (T)"
+    gl.axis("y").title = "FFT Amplitude (a.u.)"
+
+    # Apply PRL theme
+    # For some reason this is not implemented in the Python API so we use Labtalk
+    graph.lt_exec(
+        "themeApply2g theme:=\"Physical Review Letters\" option:=project;")
+
+    # Apply theme tweaks _after_ PRL theme
+
+    # Set line width
+    # Multiply by 500 because its defined like this
+    width = linewidth * 500
+    graph.lt_exec(f"set %C -w {width};")
+
+    # Set ticks
+    gl.lt_exec(f"layer.x.inc = {xtick_interval};")
+    gl.lt_exec("layer.x.minorTicks = 1;")
+    gl.lt_exec(f"layer.y.inc = {ytick_interval};")
+    gl.lt_exec("layer.y.minorTicks = 1;")
+
+    # Enable grid
+    gl.lt_exec("layer.x.showGrids = 1;")
+
+    # Hide y tick numbers
+    graph.lt_exec("axis -ps Y L 0;")
+
+    # Remove legend
+    graph.lt_exec("label -r legend;")
 
     # Export graph
     print("Saving")
